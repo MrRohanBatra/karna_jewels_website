@@ -4,13 +4,14 @@ import NavbarFinal from "./components/navbar";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import Appname from "./components/NameContext";
 import Home from "./components/Home";
-import Search from "./components/Search";
+
 export const themeContext = createContext(null);
 export const cartContext = createContext([]);
-import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
-import ProductDisplay from "./components/ProductDisplay";
-import Profile from "./components/Profile";
+import Collections from "./components/Collection";
+import { Routes, Route } from "react-router-dom";
+import CollectionItem from "./components/Display";
+import Seller from "./components/Seller";
 function App_home() {
   const [name, setName] = useState("My Karna Jewels");
   const location = useLocation();
@@ -33,6 +34,20 @@ function App_home() {
                   }
                 />
                 <Route
+                  path="/display/:id"
+                  element={
+                    <motion.div
+                      initial={{ opacity: 0, y: 15 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -15 }}
+                      transition={{ duration: 0.2, ease: "easeInOut" }}
+                    >
+                      <CollectionItem></CollectionItem>
+                    </motion.div>
+                  }
+                />
+                <Route path="/admin" element={<Seller></Seller>}></Route>
+                {/* <Route
                   path="/product/:id"
                   element={
                     <motion.div
@@ -61,9 +76,9 @@ function App_home() {
                       <Profile />
                     </motion.div>
                   }
-                />
+                /> */}
                 <Route
-                  path="/search"
+                  path="/collections"
                   element={
                     <motion.div
                       initial={{ opacity: 0, y: 40 }}
@@ -71,7 +86,7 @@ function App_home() {
                       exit={{ opacity: 0, y: -40 }}
                       transition={{ duration: 0.2, ease: "easeInOut" }}
                     >
-                      <Search />
+                    <Collections></Collections>
                     </motion.div>
                   }
                 />

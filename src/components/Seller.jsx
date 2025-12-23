@@ -1,277 +1,200 @@
-import React, { useState } from "react";
-import { Form, Button, Container, Row, Col, Card, Spinner } from "react-bootstrap";
-import Product from "./Product/Product"; // your product class
+import { useState } from "react";
+import { Container, Form, Button, Card, Image } from "react-bootstrap";
+import { collection, addDoc } from "firebase/firestore";
+import { db } from "./FirebaseAuth";
+import { uploadToCloudinary } from "../utils/util";
 
-export default function AddProduct() {
-  const [formData, setFormData] = useState(new Product());
-  const [preview, setPreview] = useState([]);
-  const [imageFiles, setImageFiles] = useState([]); // actual files
+function Seller() {
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [material, setMaterial] = useState("Gold");
+  const [purity, setPurity] = useState("22K");
+  const [type, setType] = useState("stud");
+  const [price, setPrice] = useState("");
+  const [images, setImages] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // 🧠 Handle input fields
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
-  };
-
-  // 🧠 Handle comma-separated array fields (sizes, etc.)
-  const handleArrayChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value.split(",").map((v) => v.trim()) });
-  };
-
-  // 🧠 Handle image file selection
-  const handleImageChange = (e) => {
-    const files = Array.from(e.target.files);
-    const imageURLs = files.map((file) => URL.createObjectURL(file));
-
-    setPreview(imageURLs);
-    setImageFiles(files);
-  };
-
-  // 🧩 Upload each image → get URLs → send product data
-  const uploadImagesAndSubmit = async (data, images) => {
-    try {
-      const imageUrls = [];
-
-      // Upload each image individually
-      for (const file of images) {
-        const imgData = new FormData();
-        imgData.append("abcd", file);
-
-        const res = await fetch("/api/products/upload", {
-          method: "POST",
-          body: imgData,
-        });
-
-        const result = await res.json();
-
-        if (res.ok && result.url) {
-          const imgURL = `${result.url}`;
-          imageUrls.push(imgURL);
-        } else {
-          throw new Error(result.message || "Failed to upload image");
-        }
-      }
-
-      // Combine URLs into product data
-      const productData = { ...data, images: imageUrls };
-
-      // Send product data to backend
-      const response = await fetch("/api/products/add", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(productData),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) throw new Error(result.message);
-      return result;
-    } catch (error) {
-      throw error;
-    }
-  };
-
-  // 🧩 Handle submit
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  // Upload images to Cloudinary
+  const handleImageUpload = async (files) => {
     setLoading(true);
-
     try {
-      await uploadImagesAndSubmit(formData, imageFiles);
-      alert("✅ Product added successfully!");
-      setFormData(new Product());
-      setPreview([]);
-      setImageFiles([]);
-    } catch (error) {
-      console.error("Upload failed:", error);
-      alert("❌ Failed to add product. Check console for details.");
-    } finally {
-      setLoading(false);
+      const urls = [];
+      for (let file of files) {
+        const url = await uploadToCloudinary(file);
+        urls.push(url);
+      }
+      setImages((prev) => [...prev, ...urls]);
+    } catch (err) {
+      alert("Image upload failed");
     }
+    setLoading(false);
+  };
+
+  // Remove uploaded image
+  const removeImage = (url) => {
+    setImages((prev) => prev.filter((img) => img !== url));
+  };
+
+  // Save product to Firestore
+  const handleSave = async () => {
+    if (!title || images.length === 0) {
+      alert("Title and at least one image required");
+      return;
+    }
+
+    const product = {
+      id: `earring-${Date.now()}`,
+      title,
+      description: description || "",
+      category: "earring",
+      type,
+      material,
+      purity: material === "Gold" ? purity : "",
+      price: price ? Number(price) : null,
+      price_note: `Prices may vary based on ${material} rate and design`,
+      images,
+      visible: true,
+      featured: false,
+      order: 0,
+      createdAt: new Date(),
+    };
+
+    await addDoc(collection(db, "products"), product);
+
+    alert("Product saved successfully");
+
+    // Reset form
+    setTitle("");
+    setDescription("");
+    setMaterial("Gold");
+    setPurity("22K");
+    setType("stud");
+    setPrice("");
+    setImages([]);
   };
 
   return (
-    <Container className="py-4">
-      <Row className="justify-content-center">
-        <Col md={8}>
-          <Card className="shadow-sm p-4">
-            <h3 className="mb-4 text-center">Add New Product</h3>
+    <Container className="py-5">
+      <Card className="p-4 shadow-sm">
+        <h3 className="mb-4">Seller Upload Panel</h3>
 
-            <Form onSubmit={handleSubmit}>
-              <Form.Group className="mb-3">
-                <Form.Label>Product Name</Form.Label>
-                <Form.Control
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  placeholder="Enter product name"
-                  required
+        {/* Title */}
+        <Form.Group className="mb-3">
+          <Form.Label>Product Title</Form.Label>
+          <Form.Control
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+          />
+        </Form.Group>
+
+        {/* Description (optional, AI-ready) */}
+        <Form.Group className="mb-3">
+          <Form.Label>Description (optional)</Form.Label>
+          <Form.Control
+            as="textarea"
+            rows={3}
+            // placeholder="Leave empty — AI will generate later"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+          />
+        </Form.Group>
+
+        {/* Type */}
+        <Form.Group className="mb-3">
+          <Form.Label>Type</Form.Label>
+          <Form.Select
+            value={type}
+            onChange={(e) => setType(e.target.value)}
+          >
+            <option value="stud">Stud</option>
+            <option value="hoop">Hoop</option>
+            <option value="ring">Ring</option>
+          </Form.Select>
+        </Form.Group>
+
+        {/* Material */}
+        <Form.Group className="mb-3">
+          <Form.Label>Material</Form.Label>
+          <Form.Select
+            value={material}
+            onChange={(e) => {
+              const value = e.target.value;
+              setMaterial(value);
+              if (value !== "Gold") setPurity("");
+            }}
+          >
+            <option>Gold</option>
+            <option>Silver</option>
+          </Form.Select>
+        </Form.Group>
+
+        {/* Purity (Gold only) */}
+        {material === "Gold" && (
+          <Form.Group className="mb-3">
+            <Form.Label>Purity</Form.Label>
+            <Form.Control
+              value={purity}
+              onChange={(e) => setPurity(e.target.value)}
+            />
+          </Form.Group>
+        )}
+
+        {/* Price */}
+        <Form.Group className="mb-3">
+          <Form.Label>Price</Form.Label>
+          <Form.Control
+            type="number"
+            placeholder="Optional"
+            value={price}
+            onChange={(e) => setPrice(e.target.value)}
+          />
+        </Form.Group>
+
+        {/* Upload Images */}
+        <Form.Group className="mb-3">
+          <Form.Label>Upload Images</Form.Label>
+          <Form.Control
+            type="file"
+            multiple
+            onChange={(e) => handleImageUpload(e.target.files)}
+          />
+        </Form.Group>
+
+        {/* Image Preview */}
+        {images.length > 0 && (
+          <div className="d-flex gap-2 flex-wrap mb-3">
+            {images.map((img) => (
+              <div key={img} style={{ position: "relative" }}>
+                <Image
+                  src={img}
+                  rounded
+                  style={{
+                    width: 100,
+                    height: 100,
+                    objectFit: "cover",
+                  }}
                 />
-              </Form.Group>
-
-              <Form.Group className="mb-3">
-                <Form.Label>Description</Form.Label>
-                <Form.Control
-                  as="textarea"
-                  rows={3}
-                  name="description"
-                  value={formData.description}
-                  onChange={handleChange}
-                  placeholder="Enter product description"
-                />
-              </Form.Group>
-
-              <Row>
-                <Col md={6}>
-                  <Form.Group className="mb-3">
-                    <Form.Label>Category</Form.Label>
-                    <Form.Select
-                      name="category"
-                      value={formData.category}
-                      onChange={handleChange}
-                      required
-                    >
-                      <option value="">Select Category</option>
-                      <option value="Women">Women</option>
-                      <option value="Men">Men</option>
-                      <option value="Kids">Kids</option>
-                      <option value="Unisex">Unisex</option>
-                    </Form.Select>
-                  </Form.Group>
-                </Col>
-
-                <Col md={6}>
-                  <Form.Group className="mb-3">
-                    <Form.Label>Price (₹)</Form.Label>
-                    <Form.Control
-                      type="number"
-                      name="price"
-                      value={formData.price}
-                      onChange={handleChange}
-                      placeholder="Enter price"
-                      min="0"
-                      required
-                    />
-                  </Form.Group>
-                </Col>
-              </Row>
-
-              <Row>
-                <Col md={6}>
-                  <Form.Group className="mb-3">
-                    <Form.Label>Sizes (comma separated)</Form.Label>
-                    <Form.Control
-                      type="text"
-                      name="sizes"
-                      value={formData.sizes.join(", ")}
-                      onChange={handleArrayChange}
-                      placeholder="e.g., S, M, L, XL"
-                    />
-                  </Form.Group>
-                </Col>
-
-                <Col md={6}>
-                  <Form.Group className="mb-3">
-                    <Form.Label>Color</Form.Label>
-                    <Form.Control
-                      type="text"
-                      name="color"
-                      value={formData.color}
-                      onChange={handleChange}
-                      placeholder="Enter color"
-                    />
-                  </Form.Group>
-                </Col>
-              </Row>
-
-              <Form.Group className="mb-3">
-                <Form.Label>Stock</Form.Label>
-                <Form.Control
-                  type="number"
-                  name="stock"
-                  value={formData.stock}
-                  onChange={handleChange}
-                  placeholder="Enter stock quantity"
-                  min="0"
-                />
-              </Form.Group>
-
-              <Form.Group className="mb-3">
-                <Form.Label>Company Name</Form.Label>
-                <Form.Control
-                  type="text"
-                  name="companyName"
-                  value={formData.companyName}
-                  onChange={handleChange}
-                  placeholder="Enter company name"
-                  required
-                />
-              </Form.Group>
-
-              <Form.Group className="mb-3">
-                <Form.Label>VTON Category</Form.Label>
-                <Form.Select
-                  name="vton_category"
-                  value={formData.vton_category}
-                  onChange={handleChange}
+                <Button
+                  size="sm"
+                  variant="danger"
+                  style={{ position: "absolute", top: 0, right: 0 }}
+                  onClick={() => removeImage(img)}
                 >
-                  <option value="">Select Category</option>
-                  <option value="upper_body">Upper</option>
-                  <option value="lower_body">Lower</option>
-                  <option value="dresses">Dress</option>
-                </Form.Select>
-              </Form.Group>
+                  ×
+                </Button>
+              </div>
+            ))}
+          </div>
+        )}
 
-              <Form.Group className="mb-3">
-                <Form.Label>Upload Images</Form.Label>
-                <Form.Control
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  onChange={handleImageChange}
-                />
-                <div className="mt-3 d-flex flex-wrap gap-2">
-                  {preview.map((img, i) => (
-                    <img
-                      key={i}
-                      src={img}
-                      alt="preview"
-                      width="80"
-                      height="80"
-                      className="rounded border"
-                    />
-                  ))}
-                </div>
-              </Form.Group>
+        {loading && <p>Uploading images...</p>}
 
-              <Button
-                type="submit"
-                variant="primary"
-                className="w-100 mt-3"
-                disabled={loading}
-              >
-                {loading ? (
-                  <>
-                    <Spinner
-                      as="span"
-                      animation="border"
-                      size="sm"
-                      role="status"
-                      aria-hidden="true"
-                    />{" "}
-                    Uploading...
-                  </>
-                ) : (
-                  "Add Product"
-                )}
-              </Button>
-            </Form>
-          </Card>
-        </Col>
-      </Row>
+        <Button variant="success" disabled={loading} onClick={handleSave}>
+          Save Product
+        </Button>
+      </Card>
     </Container>
   );
 }
+
+export default Seller;

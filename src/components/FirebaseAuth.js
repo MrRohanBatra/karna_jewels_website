@@ -1,39 +1,14 @@
 import { initializeApp } from "firebase/app";
-import {
-  GoogleAuthProvider,
-  getAuth,
-  signInWithEmailAndPassword, // <-- Changed import
-  signInWithPopup,
-  onAuthStateChanged,
-  signOut,
-} from "firebase/auth";
-import { createContext, useEffect, useState } from "react"; // Unused 'Children' removed
-
-/*const firebaseConfig = {
-  apiKey: "AIzaSyAI7OwMffnqF7zIzMJOaUEZ6GM64raH31Y",
-  authDomain: "ecomapp-fd4cc.firebaseapp.com",
-  projectId: "ecomapp-fd4cc",
-  storageBucket: "ecomapp-fd4cc.firebasestorage.app",
-  messagingSenderId: "1072032319999",
-  appId: "1:1072032319999:web:55fc9ed03c6d4942a6bfca",
-};
-*/
+import { getFirestore } from "firebase/firestore";
+import { createContext } from "react";
+export const UserContext=createContext(null);
 const firebaseConfig = {
-  apiKey: "AIzaSyAc7GUsZbBO2FD0DzxT2U3EWdXXL5wfSqs",
-  authDomain: "fablefit-81e44.firebaseapp.com",
-  projectId: "fablefit-81e44",
-  storageBucket: "fablefit-81e44.firebasestorage.app",
-  messagingSenderId: "567522622987",
-  appId: "1:567522622987:web:32b6150206acd9e864510e"
+  apiKey: "AIzaSyA6p2pV9qaAkrL54_BeEHZJkCOhzcGuc8I",
+  authDomain: "karna-jewels.firebaseapp.com",
+  projectId: "karna-jewels",
+  storageBucket: "karna-jewels.firebasestorage.app",
+  messagingSenderId: "148158079862",
+  appId: "1:148158079862:web:2285ed2661421ba87d5057"
 };
-
-// Export the context so other components can use it
-const UserContext = createContext(null);
 const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-
-export {
-  UserContext,
-  app,
-  auth
-}
+export const db = getFirestore(app);

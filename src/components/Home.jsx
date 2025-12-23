@@ -5,7 +5,7 @@ import SplitText from "../../ReactBits/SplitText/SplitText";
 import {useNavigate } from "react-router";
 
 function Home() {
-    const heroImage = "https://images.unsplash.com/photo-1551488831-00ddcb6c6bd3?q=80&w=2070";
+    const heroImage = "/hero.png";
     const navi = useNavigate();
     return (
         <>
