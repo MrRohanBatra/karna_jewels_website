@@ -6,7 +6,7 @@ class Earring {
     this.type = data.type || ""; // stud, hoop, ring
     this.description = data.description || "";
     this.material = data.material || "";
-    this.purity = data.purity || "";
+    this.purity = data.purity || "92.5";
     this.useCase = data.use_case || [];
     this.images = data.images || [];
 

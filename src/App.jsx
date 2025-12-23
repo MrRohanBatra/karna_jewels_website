@@ -12,8 +12,9 @@ import Collections from "./components/Collection";
 import { Routes, Route } from "react-router-dom";
 import CollectionItem from "./components/Display";
 import Seller from "./components/Seller";
+import Under from "./components/UnderDevelopment";
 function App_home() {
-  const [name, setName] = useState("My Karna Jewels");
+  const [name, setName] = useState("Ear Studio");
   const location = useLocation();
   return (
     <Appname.Provider value={[name, setName]}>
@@ -90,8 +91,8 @@ function App_home() {
                     </motion.div>
                   }
                 />
-                
-              </Routes>
+                <Route path="*" element={<Under></Under>}></Route>
+        </Routes>
             </AnimatePresence>
           </Appname.Provider>
       );
