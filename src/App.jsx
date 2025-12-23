@@ -13,6 +13,7 @@ import { Routes, Route } from "react-router-dom";
 import CollectionItem from "./components/Display";
 import Seller from "./components/Seller";
 import Under from "./components/UnderDevelopment";
+import FloatingBot from "./components/Bot";
 function App_home() {
   const [name, setName] = useState("Ear Studio");
   const location = useLocation();
@@ -93,7 +94,7 @@ function App_home() {
                 />
                 <Route path="*" element={<Under></Under>}></Route>
         </Routes>
-            </AnimatePresence>
+      </AnimatePresence>
           </Appname.Provider>
       );
 }
